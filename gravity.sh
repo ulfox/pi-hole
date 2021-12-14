@@ -874,6 +874,10 @@ for var in "$@"; do
   esac
 done
 
+if ! gravity_CheckDNSResolutionAvailable; then
+  exit 1
+fi
+
 # Remove OLD (backup) gravity file, if it exists
 if [[ -f "${gravityOLDfile}" ]]; then
   rm "${gravityOLDfile}"
@@ -904,9 +908,6 @@ if [[ "${forceDelete:-}" == true ]]; then
 fi
 
 # Gravity downloads blocklists next
-if ! gravity_CheckDNSResolutionAvailable; then
-  exit 1
-fi
 gravity_DownloadBlocklists
 
 # Create local.list
