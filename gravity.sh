@@ -331,7 +331,7 @@ gravity_CheckDNSResolutionAvailable() {
     return 0
   elif [[ -n "${secs:-}" ]]; then
     echo -e "${OVER}  ${CROSS} DNS resolution is not available"
-    exit 1
+    return 1
   fi
 
   # If the /etc/resolv.conf contains resolvers other than 127.0.0.1 then the local dnsmasq will not be queried and pi.hole is NXDOMAIN.
@@ -344,7 +344,7 @@ gravity_CheckDNSResolutionAvailable() {
     return 0
   elif [[ -n "${secs:-}" ]]; then
     echo -e "${OVER}  ${CROSS} DNS resolution is not available"
-    exit 1
+    return 1
   fi
 
   # Determine error output message
@@ -896,7 +896,11 @@ if [[ "${forceDelete:-}" == true ]]; then
 fi
 
 # Gravity downloads blocklists next
-gravity_CheckDNSResolutionAvailable
+if ! gravity_CheckDNSResolutionAvailable; then
+  chown pihole:pihole "${gravityDBfile}"
+  chmod g+w "${piholeDir}" "${gravityDBfile}"
+  exit 1
+fi
 gravity_DownloadBlocklists
 
 # Create local.list
