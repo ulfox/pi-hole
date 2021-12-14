@@ -311,6 +311,9 @@ migrate_to_database() {
 
   # Check if gravity database needs to be updated
   upgrade_gravityDB "${gravityDBfile}" "${piholeDir}"
+
+  gravity_SetPerms
+
 }
 
 # Determine if DNS resolution is available before proceeding
@@ -848,6 +851,11 @@ gravity_Cleanup() {
   fi
 }
 
+gravity_SetPerms(){
+  chown pihole:pihole "${gravityDBfile}"
+  chmod g+w "${piholeDir}" "${gravityDBfile}"
+}
+
 helpFunc() {
   echo "Usage: pihole -g
 Update domains from blocklists specified in adlists.list
@@ -897,8 +905,6 @@ fi
 
 # Gravity downloads blocklists next
 if ! gravity_CheckDNSResolutionAvailable; then
-  chown pihole:pihole "${gravityDBfile}"
-  chmod g+w "${piholeDir}" "${gravityDBfile}"
   exit 1
 fi
 gravity_DownloadBlocklists
@@ -913,8 +919,7 @@ gravity_swap_databases
 update_gravity_timestamp
 
 # Ensure proper permissions are set for the database
-chown pihole:pihole "${gravityDBfile}"
-chmod g+w "${piholeDir}" "${gravityDBfile}"
+gravity_SetPerms
 
 # Compute numbers to be displayed
 gravity_ShowCount
