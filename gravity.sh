@@ -85,19 +85,27 @@ generate_gravity_database() {
 
 # Copy data from old to new database file and swap them
 gravity_swap_databases() {
-  local str copyGravity
-  str="Building tree"
-  echo -ne "  ${INFO} ${str}..."
+  local str copyGravity enabled_adlists
 
-  # The index is intentionally not UNIQUE as poor quality adlists may contain domains more than once
-  output=$( { sqlite3 "${gravityTEMPfile}" "CREATE INDEX idx_gravity ON gravity (domain, adlist_id);"; } 2>&1 )
-  status="$?"
+  # Only build an index if there are enabled adlists
+  enabled_adlists="$(sqlite3 "${gravityTEMPfile}" "Select Count(id) from vw_adlist;")"
+  if [[ enabled_adlists -ge 1 ]]; then
+    str="Building tree"
+    echo -ne "  ${INFO} ${str}..."
 
-  if [[ "${status}" -ne 0 ]]; then
-    echo -e "\\n  ${CROSS} Unable to build gravity tree in ${gravityTEMPfile}\\n  ${output}"
-    return 1
+    # The index is intentionally not UNIQUE as poor quality adlists may contain domains more than once
+    output=$( { sqlite3 "${gravityTEMPfile}" "CREATE INDEX idx_gravity ON gravity (domain, adlist_id);"; } 2>&1 )
+    status="$?"
+
+    if [[ "${status}" -ne 0 ]]; then
+        echo -e "\\n  ${CROSS} Unable to build gravity tree in ${gravityTEMPfile}\\n  ${output}"
+        return 1
+    fi
+    echo -e "${OVER}  ${TICK} ${str}"
+  else
+      str="No enabled adlists. Skipping building tree"
+      echo -ne "  ${INFO} ${str}..."
   fi
-  echo -e "${OVER}  ${TICK} ${str}"
 
   str="Swapping databases"
   echo -ne "  ${INFO} ${str}..."
