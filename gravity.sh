@@ -88,7 +88,7 @@ gravity_swap_databases() {
   local str copyGravity enabled_adlists
 
   # Only build an index if there are enabled adlists
-  enabled_adlists="$(sqlite3 "${gravityTEMPfile}" "Select Count(id) from vw_adlist;")"
+  enabled_adlists="$(sqlite3 "${gravityTEMPfile}" "Select Count(id) from adlist where enabled=1;")"
   if [[ enabled_adlists -ge 1 ]]; then
     str="Building tree"
     echo -ne "  ${INFO} ${str}..."
@@ -104,7 +104,7 @@ gravity_swap_databases() {
     echo -e "${OVER}  ${TICK} ${str}"
   else
       str="No enabled adlists. Skipping building tree"
-      echo -ne "  ${INFO} ${str}..."
+      echo -ne "  ${INFO} ${str}...\\n"
   fi
 
   str="Swapping databases"
