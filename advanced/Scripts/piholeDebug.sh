@@ -41,18 +41,15 @@ else
     #OVER="\r\033[K"
 fi
 
-OBFUSCATED_PLACEHOLDER="<DOMAIN OBFUSCATED>"
+# shellcheck disable=SC1091
+. /etc/pihole/versions
 
 # FAQ URLs for use in showing the debug log
-FAQ_UPDATE_PI_HOLE="${COL_CYAN}https://discourse.pi-hole.net/t/how-do-i-update-pi-hole/249${COL_NC}"
-FAQ_CHECKOUT_COMMAND="${COL_CYAN}https://discourse.pi-hole.net/t/the-pihole-command-with-examples/738#checkout${COL_NC}"
 FAQ_HARDWARE_REQUIREMENTS="${COL_CYAN}https://docs.pi-hole.net/main/prerequisites/${COL_NC}"
 FAQ_HARDWARE_REQUIREMENTS_PORTS="${COL_CYAN}https://docs.pi-hole.net/main/prerequisites/#ports${COL_NC}"
 FAQ_HARDWARE_REQUIREMENTS_FIREWALLD="${COL_CYAN}https://docs.pi-hole.net/main/prerequisites/#firewalld${COL_NC}"
 FAQ_GATEWAY="${COL_CYAN}https://discourse.pi-hole.net/t/why-is-a-default-gateway-important-for-pi-hole/3546${COL_NC}"
-FAQ_ULA="${COL_CYAN}https://discourse.pi-hole.net/t/use-ipv6-ula-addresses-for-pi-hole/2127${COL_NC}"
 FAQ_FTL_COMPATIBILITY="${COL_CYAN}https://github.com/pi-hole/FTL#compatibility-list${COL_NC}"
-FAQ_BAD_ADDRESS="${COL_CYAN}https://discourse.pi-hole.net/t/why-do-i-see-bad-address-at-in-pihole-log/3972${COL_NC}"
 
 # Other URLs we may use
 FORUMS_URL="${COL_CYAN}https://discourse.pi-hole.net${COL_NC}"
@@ -66,12 +63,13 @@ PIHOLE_DIRECTORY="/etc/pihole"
 PIHOLE_SCRIPTS_DIRECTORY="/opt/pihole"
 BIN_DIRECTORY="/usr/local/bin"
 RUN_DIRECTORY="/run"
-LOG_DIRECTORY="/var/log"
-WEB_SERVER_LOG_DIRECTORY="${LOG_DIRECTORY}/lighttpd"
+LOG_DIRECTORY="/var/log/pihole"
+WEB_SERVER_LOG_DIRECTORY="/var/log/lighttpd"
 WEB_SERVER_CONFIG_DIRECTORY="/etc/lighttpd"
+WEB_SERVER_CONFIG_DIRECTORY_FEDORA="${WEB_SERVER_CONFIG_DIRECTORY}/conf.d"
+WEB_SERVER_CONFIG_DIRECTORY_DEBIAN="${WEB_SERVER_CONFIG_DIRECTORY}/conf-enabled"
 HTML_DIRECTORY="/var/www/html"
 WEB_GIT_DIRECTORY="${HTML_DIRECTORY}/admin"
-#BLOCK_PAGE_DIRECTORY="${HTML_DIRECTORY}/pihole"
 SHM_DIRECTORY="/dev/shm"
 ETC="/etc"
 
@@ -81,6 +79,8 @@ PIHOLE_CRON_FILE="${CRON_D_DIRECTORY}/pihole"
 
 WEB_SERVER_CONFIG_FILE="${WEB_SERVER_CONFIG_DIRECTORY}/lighttpd.conf"
 WEB_SERVER_CUSTOM_CONFIG_FILE="${WEB_SERVER_CONFIG_DIRECTORY}/external.conf"
+WEB_SERVER_PIHOLE_CONFIG_FILE_DEBIAN="${WEB_SERVER_CONFIG_DIRECTORY_DEBIAN}/15-pihole-admin.conf"
+WEB_SERVER_PIHOLE_CONFIG_FILE_FEDORA="${WEB_SERVER_CONFIG_DIRECTORY_FEDORA}/pihole-admin.conf"
 
 PIHOLE_INSTALL_LOG_FILE="${PIHOLE_DIRECTORY}/install.log"
 PIHOLE_RAW_BLOCKLIST_FILES="${PIHOLE_DIRECTORY}/list.*"
@@ -89,6 +89,7 @@ PIHOLE_LOGROTATE_FILE="${PIHOLE_DIRECTORY}/logrotate"
 PIHOLE_SETUP_VARS_FILE="${PIHOLE_DIRECTORY}/setupVars.conf"
 PIHOLE_FTL_CONF_FILE="${PIHOLE_DIRECTORY}/pihole-FTL.conf"
 PIHOLE_CUSTOM_HOSTS_FILE="${PIHOLE_DIRECTORY}/custom.list"
+PIHOLE_VERSIONS_FILE="${PIHOLE_DIRECTORY}/versions"
 
 # Read the value of an FTL config key. The value is printed to stdout.
 #
@@ -124,45 +125,27 @@ PIHOLE_COMMAND="${BIN_DIRECTORY}/pihole"
 PIHOLE_COLTABLE_FILE="${BIN_DIRECTORY}/COL_TABLE"
 
 FTL_PID="${RUN_DIRECTORY}/pihole-FTL.pid"
-FTL_PORT="${RUN_DIRECTORY}/pihole-FTL.port"
 
 PIHOLE_LOG="${LOG_DIRECTORY}/pihole.log"
 PIHOLE_LOG_GZIPS="${LOG_DIRECTORY}/pihole.log.[0-9].*"
 PIHOLE_DEBUG_LOG="${LOG_DIRECTORY}/pihole_debug.log"
-PIHOLE_FTL_LOG="$(get_ftl_conf_value "LOGFILE" "${LOG_DIRECTORY}/pihole-FTL.log")"
+PIHOLE_FTL_LOG="$(get_ftl_conf_value "LOGFILE" "${LOG_DIRECTORY}/FTL.log")"
 
-PIHOLE_WEB_SERVER_ACCESS_LOG_FILE="${WEB_SERVER_LOG_DIRECTORY}/access.log"
-PIHOLE_WEB_SERVER_ERROR_LOG_FILE="${WEB_SERVER_LOG_DIRECTORY}/error.log"
+PIHOLE_WEB_SERVER_ACCESS_LOG_FILE="${WEB_SERVER_LOG_DIRECTORY}/access-pihole.log"
+PIHOLE_WEB_SERVER_ERROR_LOG_FILE="${WEB_SERVER_LOG_DIRECTORY}/error-pihole.log"
 
 RESOLVCONF="${ETC}/resolv.conf"
 DNSMASQ_CONF="${ETC}/dnsmasq.conf"
-
-# An array of operating system "pretty names" that we officially support
-# We can loop through the array at any time to see if it matches a value
-#SUPPORTED_OS=("Raspbian" "Ubuntu" "Fedora" "Debian" "CentOS")
 
 # Store Pi-hole's processes in an array for easy use and parsing
 PIHOLE_PROCESSES=( "lighttpd" "pihole-FTL" )
 
 # Store the required directories in an array so it can be parsed through
-#REQUIRED_DIRECTORIES=("${CORE_GIT_DIRECTORY}"
-#"${CRON_D_DIRECTORY}"
-#"${DNSMASQ_D_DIRECTORY}"
-#"${PIHOLE_DIRECTORY}"
-#"${PIHOLE_SCRIPTS_DIRECTORY}"
-#"${BIN_DIRECTORY}"
-#"${RUN_DIRECTORY}"
-#"${LOG_DIRECTORY}"
-#"${WEB_SERVER_LOG_DIRECTORY}"
-#"${WEB_SERVER_CONFIG_DIRECTORY}"
-#"${HTML_DIRECTORY}"
-#"${WEB_GIT_DIRECTORY}"
-#"${BLOCK_PAGE_DIRECTORY}")
-
-# Store the required directories in an array so it can be parsed through
 REQUIRED_FILES=("${PIHOLE_CRON_FILE}"
 "${WEB_SERVER_CONFIG_FILE}"
 "${WEB_SERVER_CUSTOM_CONFIG_FILE}"
+"${WEB_SERVER_PIHOLE_CONFIG_FILE_DEBIAN}"
+"${WEB_SERVER_PIHOLE_CONFIG_FILE_FEDORA}"
 "${PIHOLE_INSTALL_LOG_FILE}"
 "${PIHOLE_RAW_BLOCKLIST_FILES}"
 "${PIHOLE_LOCAL_HOSTS_FILE}"
@@ -172,7 +155,6 @@ REQUIRED_FILES=("${PIHOLE_CRON_FILE}"
 "${PIHOLE_COMMAND}"
 "${PIHOLE_COLTABLE_FILE}"
 "${FTL_PID}"
-"${FTL_PORT}"
 "${PIHOLE_LOG}"
 "${PIHOLE_LOG_GZIPS}"
 "${PIHOLE_DEBUG_LOG}"
@@ -181,7 +163,8 @@ REQUIRED_FILES=("${PIHOLE_CRON_FILE}"
 "${PIHOLE_WEB_SERVER_ERROR_LOG_FILE}"
 "${RESOLVCONF}"
 "${DNSMASQ_CONF}"
-"${PIHOLE_CUSTOM_HOSTS_FILE}")
+"${PIHOLE_CUSTOM_HOSTS_FILE}"
+"${PIHOLE_VERSIONS_FILE}")
 
 DISCLAIMER="This process collects information from your Pi-hole, and optionally uploads it to a unique and random directory on tricorder.pi-hole.net.
 
@@ -247,10 +230,8 @@ initialize_debug() {
 
 # This is a function for visually displaying the current test that is being run.
 # Accepts one variable: the name of what is being diagnosed
-# Colors do not show in the dasboard, but the icons do: [i], [✓], and [✗]
 echo_current_diagnostic() {
     # Colors are used for visually distinguishing each test in the output
-    # These colors do not show in the GUI, but the formatting will
     log_write "\\n${COL_PURPLE}*** [ DIAGNOSING ]:${COL_NC} ${1}"
 }
 
@@ -259,15 +240,7 @@ compare_local_version_to_git_version() {
     local git_dir="${1}"
     # The named component of the project (Core or Web)
     local pihole_component="${2}"
-    # If we are checking the Core versions,
-    if [[ "${pihole_component}" == "Core" ]]; then
-        # We need to search for "Pi-hole" when using pihole -v
-        local search_term="Pi-hole"
-    elif [[ "${pihole_component}" == "Web" ]]; then
-        # We need to search for "AdminLTE" so store it in a variable as well
-        #shellcheck disable=2034
-        local search_term="AdminLTE"
-    fi
+
     # Display what we are checking
     echo_current_diagnostic "${pihole_component} version"
     # Store the error message in a variable in case we want to change and/or reuse it
@@ -280,43 +253,35 @@ compare_local_version_to_git_version() {
         log_write "${COL_RED}Could not cd into ${git_dir}$COL_NC"
         if git status &> /dev/null; then
             # The current version the user is on
-            local remote_version
-            remote_version=$(git describe --tags --abbrev=0);
+            local local_version
+            local_version=$(git describe --tags --abbrev=0);
             # What branch they are on
-            local remote_branch
-            remote_branch=$(git rev-parse --abbrev-ref HEAD);
+            local local_branch
+            local_branch=$(git rev-parse --abbrev-ref HEAD);
             # The commit they are on
-            local remote_commit
-            remote_commit=$(git describe --long --dirty --tags --always)
+            local local_commit
+            local_commit=$(git describe --long --dirty --tags --always)
             # Status of the repo
             local local_status
             local_status=$(git status -s)
             # echo this information out to the user in a nice format
-            # If the current version matches what pihole -v produces, the user is up-to-date
-            if [[ "${remote_version}" == "$(pihole -v | awk '/${search_term}/ {print $6}' | cut -d ')' -f1)" ]]; then
-                log_write "${TICK} ${pihole_component}: ${COL_GREEN}${remote_version}${COL_NC}"
-            # If not,
-            else
-                # echo the current version in yellow, signifying it's something to take a look at, but not a critical error
-                # Also add a URL to an FAQ
-                log_write "${INFO} ${pihole_component}: ${COL_YELLOW}${remote_version:-Untagged}${COL_NC} (${FAQ_UPDATE_PI_HOLE})"
-            fi
+            log_write "${TICK} Version: ${local_version}"
 
             # Print the repo upstreams
             remotes=$(git remote -v)
             log_write "${INFO} Remotes: ${remotes//$'\n'/'\n             '}"
 
             # If the repo is on the master branch, they are on the stable codebase
-            if [[ "${remote_branch}" == "master" ]]; then
+            if [[ "${local_branch}" == "master" ]]; then
                 # so the color of the text is green
-                log_write "${INFO} Branch: ${COL_GREEN}${remote_branch}${COL_NC}"
+                log_write "${INFO} Branch: ${COL_GREEN}${local_branch}${COL_NC}"
             # If it is any other branch, they are in a development branch
             else
                 # So show that in yellow, signifying it's something to take a look at, but not a critical error
-                log_write "${INFO} Branch: ${COL_YELLOW}${remote_branch:-Detached}${COL_NC} (${FAQ_CHECKOUT_COMMAND})"
+                log_write "${INFO} Branch: ${COL_YELLOW}${local_branch:-Detached}${COL_NC}"
             fi
             # echo the current commit
-            log_write "${INFO} Commit: ${remote_commit}"
+            log_write "${INFO} Commit: ${local_commit}"
             # if `local_status` is non-null, then the repo is not clean, display details here
             if [[ ${local_status} ]]; then
               # Replace new lines in the status with 12 spaces to make the output cleaner
@@ -350,18 +315,28 @@ compare_local_version_to_git_version() {
 }
 
 check_ftl_version() {
-    local ftl_name="FTL"
-    echo_current_diagnostic "${ftl_name} version"
+    local FTL_VERSION FTL_COMMIT FTL_BRANCH
+    echo_current_diagnostic "FTL version"
     # Use the built in command to check FTL's version
     FTL_VERSION=$(pihole-FTL version)
-    # Compare the current FTL version to the remote version
-    if [[ "${FTL_VERSION}" == "$(pihole -v | awk '/FTL/ {print $6}' | cut -d ')' -f1)" ]]; then
-        # If they are the same, FTL is up-to-date
-        log_write "${TICK} ${ftl_name}: ${COL_GREEN}${FTL_VERSION}${COL_NC}"
+    FTL_BRANCH=$(pihole-FTL branch)
+    FTL_COMMIT=$(pihole-FTL --hash)
+
+
+    log_write "${TICK} Version: ${FTL_VERSION}"
+
+    # If they use the master branch, they are on the stable codebase
+    if [[ "${FTL_BRANCH}" == "master" ]]; then
+        # so the color of the text is green
+        log_write "${INFO} Branch: ${COL_GREEN}${FTL_BRANCH}${COL_NC}"
+        # If it is any other branch, they are in a development branch
     else
-        # If not, show it in yellow, signifying there is an update
-        log_write "${TICK} ${ftl_name}: ${COL_YELLOW}${FTL_VERSION}${COL_NC} (${FAQ_UPDATE_PI_HOLE})"
+        # So show that in yellow, signifying it's something to take a look at, but not a critical error
+        log_write "${INFO} Branch: ${COL_YELLOW}${FTL_BRANCH}${COL_NC}"
     fi
+
+    # echo the current commit
+    log_write "${INFO} Commit: ${FTL_COMMIT}"
 }
 
 # Checks the core version of the Pi-hole codebase
@@ -423,41 +398,53 @@ os_check() {
     # Extract dig response
     response="${cmdResult%%$'\n'*}"
 
-    IFS=" " read -r -a supportedOS < <(echo "${response}" | tr -d '"')
-    for distro_and_versions in "${supportedOS[@]}"
-    do
-        distro_part="${distro_and_versions%%=*}"
-        versions_part="${distro_and_versions##*=}"
-
-        if [[ "${detected_os^^}" =~ ${distro_part^^} ]]; then
-            valid_os=true
-            IFS="," read -r -a supportedVer <<<"${versions_part}"
-            for version in "${supportedVer[@]}"
-            do
-                if [[ "${detected_version}" =~ $version ]]; then
-                    valid_version=true
-                    break
-                fi
-            done
-            break
-        fi
-    done
-
-    log_write "${INFO} dig return code:  ${digReturnCode}"
-    log_write "${INFO} dig response:  ${response}"
-
-    if [ "$valid_os" = true ]; then
-        log_write "${TICK} Distro:  ${COL_GREEN}${detected_os^}${COL_NC}"
-
-        if [ "$valid_version" = true ]; then
-            log_write "${TICK} Version: ${COL_GREEN}${detected_version}${COL_NC}"
-        else
-            log_write "${CROSS} Version: ${COL_RED}${detected_version}${COL_NC}"
-            log_write "${CROSS} Error: ${COL_RED}${detected_os^} is supported but version ${detected_version} is currently unsupported (${FAQ_HARDWARE_REQUIREMENTS})${COL_NC}"
-        fi
+    if [ "${digReturnCode}" -ne 0 ]; then
+        log_write "${INFO} Distro: ${detected_os^}"
+        log_write "${INFO} Version: ${detected_version}"
+        log_write "${CROSS} dig return code: ${COL_RED}${digReturnCode}${COL_NC}"
+        log_write "${CROSS} dig response: ${response}"
+        log_write "${CROSS} Error: ${COL_RED}dig command failed - Unable to check OS${COL_NC}"
     else
-        log_write "${CROSS} Distro:  ${COL_RED}${detected_os^}${COL_NC}"
-        log_write "${CROSS} Error: ${COL_RED}${detected_os^} is not a supported distro (${FAQ_HARDWARE_REQUIREMENTS})${COL_NC}"
+        IFS=" " read -r -a supportedOS < <(echo "${response}" | tr -d '"')
+        for distro_and_versions in "${supportedOS[@]}"
+        do
+            distro_part="${distro_and_versions%%=*}"
+            versions_part="${distro_and_versions##*=}"
+
+            if [[ "${detected_os^^}" =~ ${distro_part^^} ]]; then
+                valid_os=true
+                IFS="," read -r -a supportedVer <<<"${versions_part}"
+                for version in "${supportedVer[@]}"
+                do
+                    if [[ "${detected_version}" =~ $version ]]; then
+                        valid_version=true
+                        break
+                    fi
+                done
+                break
+            fi
+        done
+
+        local finalmsg
+        if [ "$valid_os" = true ]; then
+            log_write "${TICK} Distro:  ${COL_GREEN}${detected_os^}${COL_NC}"
+
+            if [ "$valid_version" = true ]; then
+                log_write "${TICK} Version: ${COL_GREEN}${detected_version}${COL_NC}"
+                finalmsg="${TICK} ${COL_GREEN}Distro and version supported${COL_NC}"
+            else
+                log_write "${CROSS} Version: ${COL_RED}${detected_version}${COL_NC}"
+                finalmsg="${CROSS} Error: ${COL_RED}${detected_os^} is supported but version ${detected_version} is currently unsupported ${COL_NC}(${FAQ_HARDWARE_REQUIREMENTS})${COL_NC}"
+            fi
+        else
+            log_write "${CROSS} Distro:  ${COL_RED}${detected_os^}${COL_NC}"
+            finalmsg="${CROSS} Error: ${COL_RED}${detected_os^} is not a supported distro ${COL_NC}(${FAQ_HARDWARE_REQUIREMENTS})${COL_NC}"
+        fi
+
+        # Print dig response and the final check result
+        log_write "${TICK} dig return code: ${COL_GREEN}${digReturnCode}${COL_NC}"
+        log_write "${INFO} dig response: ${response}"
+        log_write "${finalmsg}"
     fi
 }
 
@@ -467,8 +454,8 @@ diagnose_operating_system() {
     # Display the current test that is running
     echo_current_diagnostic "Operating system"
 
-    # If the PIHOLE_DOCKER_TAG variable is set, include this information in the debug output
-    [ -n "${PIHOLE_DOCKER_TAG}" ] && log_write "${INFO} Pi-hole Docker Container: ${PIHOLE_DOCKER_TAG}"
+    # If DOCKER_VERSION is set (Sourced from /etc/pihole/versions at start of script), include this information in the debug output
+    [ -n "${DOCKER_VERSION}" ] && log_write "${INFO} Pi-hole Docker Container: ${DOCKER_VERSION}"
 
     # If there is a /etc/*release file, it's probably a supported operating system, so we can
     if ls /etc/*release 1> /dev/null 2>&1; then
@@ -600,10 +587,10 @@ disk_usage() {
     # Some lines of df might contain sensitive information like usernames and passwords.
     # E.g. curlftpfs filesystems (https://www.looklinux.com/mount-ftp-share-on-linux-using-curlftps/)
     # We are not interested in those lines so we collect keyword, to remove them from the output
-    # Additinal keywords can be added, separated by "|"
+    # Additional keywords can be added, separated by "|"
     hide="curlftpfs"
 
-    # only show those lines not containg a sensitive phrase
+    # only show those lines not containing a sensitive phrase
     for line in "${file_system[@]}"; do
       if [[ ! $line =~ $hide ]]; then
         log_write "   ${line}"
@@ -678,15 +665,20 @@ ping_gateway() {
     local protocol="${1}"
     ping_ipv4_or_ipv6 "${protocol}"
     # Check if we are using IPv4 or IPv6
-    # Find the default gateway using IPv4 or IPv6
+    # Find the default gateways using IPv4 or IPv6
     local gateway
-    gateway="$(ip -"${protocol}" route | grep default | grep "${PIHOLE_INTERFACE}" | cut -d ' ' -f 3)"
 
-    # If the gateway variable has a value (meaning a gateway was found),
-    if [[ -n "${gateway}" ]]; then
-        log_write "${INFO} Default IPv${protocol} gateway: ${gateway}"
+    log_write "${INFO} Default IPv${protocol} gateway(s):"
+
+    while IFS= read -r gateway; do
+        log_write "     ${gateway}"
+    done < <(ip -"${protocol}" route | grep default | grep "${PIHOLE_INTERFACE}" | cut -d ' ' -f 3)
+
+    gateway=$(ip -"${protocol}" route | grep default | grep "${PIHOLE_INTERFACE}" | cut -d ' ' -f 3 | head -n 1)
+    # If there was at least one gateway
+    if [ -n "${gateway}" ]; then
         # Let the user know we will ping the gateway for a response
-        log_write "   * Pinging ${gateway}..."
+        log_write "   * Pinging first gateway ${gateway}..."
         # Try to quietly ping the gateway 3 times, with a timeout of 3 seconds, using numeric output only,
         # on the pihole interface, and tail the last three lines of the output
         # If pinging the gateway is not successful,
@@ -753,7 +745,7 @@ check_required_ports() {
     # Sort the addresses and remove duplicates
     while IFS= read -r line; do
         ports_in_use+=( "$line" )
-    done < <( ss --listening --numeric --tcp --udp --processes --oneline --no-header )
+    done < <( ss --listening --numeric --tcp --udp --processes --no-header )
 
     # Now that we have the values stored,
     for i in "${!ports_in_use[@]}"; do
@@ -779,6 +771,21 @@ check_required_ports() {
     done
 }
 
+ip_command() {
+    # Obtain and log information from "ip XYZ show" commands
+    echo_current_diagnostic "${2}"
+    local entries=()
+    mapfile -t entries < <(ip "${1}" show)
+    for line in "${entries[@]}"; do
+        log_write "   ${line}"
+    done
+}
+
+check_ip_command() {
+    ip_command "addr" "Network interfaces and addresses"
+    ip_command "route" "Network routing table"
+}
+
 check_networking() {
     # Runs through several of the functions made earlier; we just clump them
     # together since they are all related to the networking aspect of things
@@ -787,7 +794,9 @@ check_networking() {
     detect_ip_addresses "6"
     ping_gateway "4"
     ping_gateway "6"
-    check_required_ports
+    # Skip the following check if installed in docker container. Unpriv'ed containers do not have access to the information required
+    # to resolve the service name listening - and the container should not start if there was a port conflict anyway
+    [ -z "${DOCKER_VERSION}" ] && check_required_ports
 }
 
 check_x_headers() {
@@ -797,39 +806,24 @@ check_x_headers() {
     # Similarly, it will show "X-Pi-hole: The Pi-hole Web interface is working!" if you view the header returned
     # when accessing the dashboard (i.e curl -I pi.hole/admin/)
     # server is operating correctly
-    echo_current_diagnostic "Dashboard and block page"
+    echo_current_diagnostic "Dashboard headers"
     # Use curl -I to get the header and parse out just the X-Pi-hole one
-    local block_page
-    block_page=$(curl -Is localhost | awk '/X-Pi-hole/' | tr -d '\r')
-    # Do it for the dashboard as well, as the header is different than above
+    local full_curl_output_dashboard
     local dashboard
-    dashboard=$(curl -Is localhost/admin/ | awk '/X-Pi-hole/' | tr -d '\r')
+    full_curl_output_dashboard="$(curl -Is localhost/admin/)"
+    dashboard=$(echo "${full_curl_output_dashboard}" | awk '/X-Pi-hole/' | tr -d '\r')
     # Store what the X-Header should be in variables for comparison later
-    local block_page_working
-    block_page_working="X-Pi-hole: A black hole for Internet advertisements."
     local dashboard_working
     dashboard_working="X-Pi-hole: The Pi-hole Web interface is working!"
-    local full_curl_output_block_page
-    full_curl_output_block_page="$(curl -Is localhost)"
-    local full_curl_output_dashboard
-    full_curl_output_dashboard="$(curl -Is localhost/admin/)"
-    # If the X-header found by curl matches what is should be,
-    if [[ $block_page == "$block_page_working" ]]; then
-        # display a success message
-        log_write "$TICK Block page X-Header: ${COL_GREEN}${block_page}${COL_NC}"
-    else
-        # Otherwise, show an error
-        log_write "$CROSS Block page X-Header: ${COL_RED}X-Header does not match or could not be retrieved.${COL_NC}"
-        log_write "${COL_RED}${full_curl_output_block_page}${COL_NC}"
-    fi
 
-    # Same logic applies to the dashboard as above, if the X-Header matches what a working system should have,
+    # If the X-Header matches what a working system should have,
     if [[ $dashboard == "$dashboard_working" ]]; then
         # then we can show a success
         log_write "$TICK Web interface X-Header: ${COL_GREEN}${dashboard}${COL_NC}"
     else
         # Otherwise, it's a failure since the X-Headers either don't exist or have been modified in some way
         log_write "$CROSS Web interface X-Header: ${COL_RED}X-Header does not match or could not be retrieved.${COL_NC}"
+
         log_write "${COL_RED}${full_curl_output_dashboard}${COL_NC}"
     fi
 }
@@ -871,7 +865,7 @@ dig_at() {
     # This helps emulate queries to different domains that a user might query
     # It will also give extra assurance that Pi-hole is correctly resolving and blocking domains
     local random_url
-    random_url=$(sqlite3 "${PIHOLE_GRAVITY_DB_FILE}" "SELECT domain FROM vw_gravity ORDER BY RANDOM() LIMIT 1")
+    random_url=$(pihole-FTL sqlite3 "${PIHOLE_GRAVITY_DB_FILE}" "SELECT domain FROM vw_gravity ORDER BY RANDOM() LIMIT 1")
 
     # Next we need to check if Pi-hole can resolve a domain when the query is sent to it's IP address
     # This better emulates how clients will interact with Pi-hole as opposed to above where Pi-hole is
@@ -889,9 +883,11 @@ dig_at() {
     #          Removes all interfaces which are not UP
     #     s/^[0-9]*: //g;
     #          Removes interface index
+    #     s/@.*//g;
+    #          Removes everything after @ (if found)
     #     s/: <.*//g;
     #          Removes everything after the interface name
-    interfaces="$(ip link show | sed "/ master /d;/UP/!d;s/^[0-9]*: //g;s/: <.*//g;")"
+    interfaces="$(ip link show | sed "/ master /d;/UP/!d;s/^[0-9]*: //g;s/@.*//g;s/: <.*//g;")"
 
     while IFS= read -r iface ; do
         # Get addresses of current interface
@@ -945,10 +941,21 @@ process_status(){
         else
             # Otherwise, use the service command and mock the output of `systemctl is-active`
             local status_of_process
-            if service "${i}" status | grep -E 'is\srunning' &> /dev/null; then
-                status_of_process="active"
+
+            # If DOCKER_VERSION is set, the output is slightly different (s6 init system on Docker)
+            if [ -n "${DOCKER_VERSION}" ]; then
+                if service "${i}" status | grep -E '^up' &> /dev/null; then
+                    status_of_process="active"
+                else
+                    status_of_process="inactive"
+                fi
             else
-                status_of_process="inactive"
+            # non-Docker system
+                if service "${i}" status | grep -E 'is\srunning' &> /dev/null; then
+                    status_of_process="active"
+                else
+                    status_of_process="inactive"
+                fi
             fi
         fi
         # and print it out to the user
@@ -974,6 +981,20 @@ ftl_full_status(){
     fi
 }
 
+lighttpd_test_configuration(){
+    # let lighttpd test it's own configuration
+    local lighttpd_conf_test
+    echo_current_diagnostic "Lighttpd configuration test"
+    lighttpd_conf_test=$(lighttpd -tt -f /etc/lighttpd/lighttpd.conf)
+    if [ -z "${lighttpd_conf_test}" ]; then
+        # empty output
+        log_write "${TICK} ${COL_GREEN}No error in lighttpd configuration${COL_NC}"
+    else
+        log_write "${CROSS} ${COL_RED}Error in lighttpd configuration${COL_NC}"
+        log_write "   ${lighttpd_conf_test}"
+    fi
+}
+
 make_array_from_file() {
     local filename="${1}"
     # The second argument can put a limit on how many line should be read from the file
@@ -990,7 +1011,7 @@ make_array_from_file() {
     else
         # Otherwise, read the file line by line
         while IFS= read -r line;do
-            # Othwerise, strip out comments and blank lines
+            # Otherwise, strip out comments and blank lines
             new_line=$(echo "${line}" | sed -e 's/^\s*#.*$//' -e '/^$/d')
             # If the line still has content (a non-zero value)
             if [[ -n "${new_line}" ]]; then
@@ -1048,7 +1069,7 @@ parse_file() {
 }
 
 check_name_resolution() {
-    # Check name resolution from localhost, Pi-hole's IP, and Google's name severs
+    # Check name resolution from localhost, Pi-hole's IP, and Google's name servers
     # using the function we created earlier
     dig_at 4
     dig_at 6
@@ -1066,10 +1087,13 @@ dir_check() {
         # check if exists first; if it does,
         if ls "${filename}" 1> /dev/null 2>&1; then
             # do nothing
-            :
+            true
+            return
         else
             # Otherwise, show an error
             log_write "${COL_RED}${directory} does not exist.${COL_NC}"
+            false
+            return
         fi
     done
 }
@@ -1077,6 +1101,19 @@ dir_check() {
 list_files_in_dir() {
     # Set the first argument passed to this function as a named variable for better readability
     local dir_to_parse="${1}"
+
+    # show files and sizes of some directories, don't print the file content (yet)
+    if [[ "${dir_to_parse}" == "${SHM_DIRECTORY}" ]]; then
+        # SHM file - we do not want to see the content, but we want to see the files and their sizes
+        log_write "$(ls -lh "${dir_to_parse}/")"
+    elif [[ "${dir_to_parse}" == "${WEB_SERVER_CONFIG_DIRECTORY_FEDORA}" ]]; then
+        # we want to see all files files in /etc/lighttpd/conf.d
+        log_write "$(ls -lh "${dir_to_parse}/" 2> /dev/null )"
+    elif [[ "${dir_to_parse}" == "${WEB_SERVER_CONFIG_DIRECTORY_DEBIAN}" ]]; then
+        # we want to see all files files in /etc/lighttpd/conf.d
+        log_write "$(ls -lh "${dir_to_parse}/"/ 2> /dev/null )"
+    fi
+
     # Store the files found in an array
     mapfile -t files_found < <(ls "${dir_to_parse}")
     # For each file in the array,
@@ -1092,11 +1129,8 @@ list_files_in_dir() {
             [[ "${dir_to_parse}/${each_file}" == "${PIHOLE_WEB_SERVER_ACCESS_LOG_FILE}" ]] || \
             [[ "${dir_to_parse}/${each_file}" == "${PIHOLE_LOG_GZIPS}" ]]; then
             :
-        elif [[ "${dir_to_parse}" == "${SHM_DIRECTORY}" ]]; then
-            # SHM file - we do not want to see the content, but we want to see the files and their sizes
-            log_write "$(ls -lhd "${dir_to_parse}"/"${each_file}")"
         elif [[ "${dir_to_parse}" == "${DNSMASQ_D_DIRECTORY}" ]]; then
-            # in case of the dnsmasq directory inlcuede all files in the debug output
+            # in case of the dnsmasq directory include all files in the debug output
             log_write "\\n${COL_GREEN}$(ls -lhd "${dir_to_parse}"/"${each_file}")${COL_NC}"
             make_array_from_file "${dir_to_parse}/${each_file}"
         else
@@ -1129,9 +1163,10 @@ show_content_of_files_in_dir() {
     # Set a local variable for better readability
     local directory="${1}"
     # Check if the directory exists
-    dir_check "${directory}"
-    # if it does, list the files in it
-    list_files_in_dir "${directory}"
+    if dir_check "${directory}"; then
+        # if it does, list the files in it
+        list_files_in_dir "${directory}"
+    fi
 }
 
 show_content_of_pihole_files() {
@@ -1139,6 +1174,8 @@ show_content_of_pihole_files() {
     show_content_of_files_in_dir "${PIHOLE_DIRECTORY}"
     show_content_of_files_in_dir "${DNSMASQ_D_DIRECTORY}"
     show_content_of_files_in_dir "${WEB_SERVER_CONFIG_DIRECTORY}"
+    show_content_of_files_in_dir "${WEB_SERVER_CONFIG_DIRECTORY_FEDORA}"
+    show_content_of_files_in_dir "${WEB_SERVER_CONFIG_DIRECTORY_DEBIAN}"
     show_content_of_files_in_dir "${CRON_D_DIRECTORY}"
     show_content_of_files_in_dir "${WEB_SERVER_LOG_DIRECTORY}"
     show_content_of_files_in_dir "${LOG_DIRECTORY}"
@@ -1185,7 +1222,7 @@ show_db_entries() {
     IFS=$'\r\n'
     local entries=()
     mapfile -t entries < <(\
-        sqlite3 "${PIHOLE_GRAVITY_DB_FILE}" \
+        pihole-FTL sqlite3 "${PIHOLE_GRAVITY_DB_FILE}" \
             -cmd ".headers on" \
             -cmd ".mode column" \
             -cmd ".width ${widths}" \
@@ -1210,7 +1247,7 @@ show_FTL_db_entries() {
     IFS=$'\r\n'
     local entries=()
     mapfile -t entries < <(\
-        sqlite3 "${PIHOLE_FTL_DB_FILE}" \
+        pihole-FTL sqlite3 "${PIHOLE_FTL_DB_FILE}" \
             -cmd ".headers on" \
             -cmd ".mode column" \
             -cmd ".width ${widths}" \
@@ -1230,7 +1267,7 @@ check_dhcp_servers() {
     OLD_IFS="$IFS"
     IFS=$'\n'
     local entries=()
-    mapfile -t entries < <(pihole-FTL dhcp-discover)
+    mapfile -t entries < <(pihole-FTL dhcp-discover & spinner)
 
     for line in "${entries[@]}"; do
         log_write "   ${line}"
@@ -1256,18 +1293,27 @@ show_clients() {
 }
 
 show_messages() {
-    show_FTL_db_entries "Pi-hole diagnosis messages" "SELECT id,datetime(timestamp,'unixepoch','localtime') timestamp,type,message,blob1,blob2,blob3,blob4,blob5 FROM message;" "4 19 20 60 20 20 20 20 20"
+    show_FTL_db_entries "Pi-hole diagnosis messages" "SELECT count (message) as count, datetime(max(timestamp),'unixepoch','localtime') as 'last timestamp', type, message, blob1, blob2, blob3, blob4, blob5 FROM message GROUP BY type, message, blob1, blob2, blob3, blob4, blob5;" "6 19 20 60 20 20 20 20 20"
+}
+
+database_permissions() {
+    local permissions
+    permissions=$(ls -lhd "${1}")
+    log_write "${COL_GREEN}${permissions}${COL_NC}"
 }
 
 analyze_gravity_list() {
     echo_current_diagnostic "Gravity Database"
 
-    local gravity_permissions
-    gravity_permissions=$(ls -lhd "${PIHOLE_GRAVITY_DB_FILE}")
-    log_write "${COL_GREEN}${gravity_permissions}${COL_NC}"
+    database_permissions "${PIHOLE_GRAVITY_DB_FILE}"
+
+    # if users want to check database integrity
+    if [[ "${CHECK_DATABASE}" = true ]]; then
+        database_integrity_check "${PIHOLE_GRAVITY_DB_FILE}"
+    fi
 
     show_db_entries "Info table" "SELECT property,value FROM info" "20 40"
-    gravity_updated_raw="$(sqlite3 "${PIHOLE_GRAVITY_DB_FILE}" "SELECT value FROM info where property = 'updated'")"
+    gravity_updated_raw="$(pihole-FTL sqlite3 "${PIHOLE_GRAVITY_DB_FILE}" "SELECT value FROM info where property = 'updated'")"
     gravity_updated="$(date -d @"${gravity_updated_raw}")"
     log_write "   Last gravity run finished at: ${COL_CYAN}${gravity_updated}${COL_NC}"
     log_write ""
@@ -1275,7 +1321,7 @@ analyze_gravity_list() {
     OLD_IFS="$IFS"
     IFS=$'\r\n'
     local gravity_sample=()
-    mapfile -t gravity_sample < <(sqlite3 "${PIHOLE_GRAVITY_DB_FILE}" "SELECT domain FROM vw_gravity LIMIT 10")
+    mapfile -t gravity_sample < <(pihole-FTL sqlite3 "${PIHOLE_GRAVITY_DB_FILE}" "SELECT domain FROM vw_gravity LIMIT 10")
     log_write "   ${COL_CYAN}----- First 10 Gravity Domains -----${COL_NC}"
 
     for line in "${gravity_sample[@]}"; do
@@ -1286,49 +1332,87 @@ analyze_gravity_list() {
     IFS="$OLD_IFS"
 }
 
-obfuscated_pihole_log() {
-  local pihole_log=("$@")
-  local line
-  local error_to_check_for
-  local line_to_obfuscate
-  local obfuscated_line
-  for line in "${pihole_log[@]}"; do
-      # A common error in the pihole.log is when there is a non-hosts formatted file
-      # that the DNS server is attempting to read.  Since it's not formatted
-      # correctly, there will be an entry for "bad address at line n"
-      # So we can check for that here and highlight it in red so the user can see it easily
-      error_to_check_for=$(echo "${line}" | grep 'bad address at')
-      # Some users may not want to have the domains they visit sent to us
-      # To that end, we check for lines in the log that would contain a domain name
-      line_to_obfuscate=$(echo "${line}" | grep ': query\|: forwarded\|: reply')
-      # If the variable contains a value, it found an error in the log
-      if [[ -n ${error_to_check_for} ]]; then
-          # So we can print it in red to make it visible to the user
-          log_write "   ${CROSS} ${COL_RED}${line}${COL_NC} (${FAQ_BAD_ADDRESS})"
+analyze_ftl_db() {
+    echo_current_diagnostic "Pi-hole FTL Query Database"
+    database_permissions "${PIHOLE_FTL_DB_FILE}"
+    # if users want to check database integrity
+    if [[ "${CHECK_DATABASE}" = true ]]; then
+        database_integrity_check "${PIHOLE_FTL_DB_FILE}"
+    fi
+}
+
+database_integrity_check(){
+    local result
+    local database="${1}"
+
+    log_write "${INFO} Checking integrity of ${database} ... (this can take several minutes)"
+    result="$(pihole-FTL "${database}" "PRAGMA integrity_check" 2>&1 & spinner)"
+    if [[ ${result} = "ok" ]]; then
+      log_write "${TICK} Integrity of ${database} intact"
+
+
+      log_write "${INFO} Checking foreign key constraints of ${database} ... (this can take several minutes)"
+      unset result
+      result="$(pihole-FTL sqlite3 "${database}" -cmd ".headers on" -cmd ".mode column" "PRAGMA foreign_key_check" 2>&1 & spinner)"
+      if [[ -z ${result} ]]; then
+        log_write "${TICK} No foreign key errors in ${database}"
       else
-          # If the variable does not a value (the current default behavior), so do not obfuscate anything
-          if [[ -z ${OBFUSCATE} ]]; then
-              log_write "   ${line}"
-          # Othwerise, a flag was passed to this command to obfuscate domains in the log
-          else
-              # So first check if there are domains in the log that should be obfuscated
-              if [[ -n ${line_to_obfuscate} ]]; then
-                  # If there are, we need to use awk to replace only the domain name (the 6th field in the log)
-                  # so we substitute the domain for the placeholder value
-                  obfuscated_line=$(echo "${line_to_obfuscate}" | awk -v placeholder="${OBFUSCATED_PLACEHOLDER}" '{sub($6,placeholder); print $0}')
-                  log_write "   ${obfuscated_line}"
-              else
-                  log_write "   ${line}"
-              fi
-          fi
+        log_write "${CROSS} ${COL_RED}Foreign key errors in ${database} found.${COL_NC}"
+        while IFS= read -r line ; do
+            log_write "    $line"
+        done <<< "$result"
       fi
-  done
+
+    else
+      log_write "${CROSS} ${COL_RED}Integrity errors in ${database} found.\n${COL_NC}"
+      while IFS= read -r line ; do
+        log_write "    $line"
+      done <<< "$result"
+    fi
+
+}
+
+# Show a text spinner during a long process run
+spinner(){
+    # Show the spinner only if there is a tty
+    if tty -s; then
+        # PID of the most recent background process
+        _PID=$!
+        _spin="/-\|"
+        _start=0
+        _elapsed=0
+        _i=1
+
+        # Start the counter
+        _start=$(date +%s)
+
+        # Hide the cursor
+        tput civis > /dev/tty
+
+        # ensures cursor is visible again, in case of premature exit
+        trap 'tput cnorm > /dev/tty' EXIT
+
+        while [ -d /proc/$_PID ]; do
+            _elapsed=$(( $(date +%s) - _start ))
+            # use hours only if needed
+            if [ "$_elapsed" -lt 3600 ]; then
+                printf "\r${_spin:_i++%${#_spin}:1} %02d:%02d" $((_elapsed/60)) $((_elapsed%60)) >"$(tty)"
+            else
+                printf "\r${_spin:_i++%${#_spin}:1} %02d:%02d:%02d" $((_elapsed/3600)) $(((_elapsed/60)%60)) $((_elapsed%60)) >"$(tty)"
+            fi
+            sleep 0.25
+        done
+
+        # Return to the begin of the line after completion (the spinner will be overwritten)
+        printf "\r" >"$(tty)"
+
+        # Restore cursor visibility
+        tput cnorm > /dev/tty
+    fi
 }
 
 analyze_pihole_log() {
   echo_current_diagnostic "Pi-hole log"
-  local pihole_log_head=()
-  local pihole_log_tail=()
   local pihole_log_permissions
   local logging_enabled
 
@@ -1338,22 +1422,10 @@ analyze_pihole_log() {
       log_write "${INFO} Query logging is disabled"
       log_write ""
   fi
-  # Put the current Internal Field Separator into another variable so it can be restored later
-  OLD_IFS="$IFS"
-  # Get the lines that are in the file(s) and store them in an array for parsing later
-  IFS=$'\r\n'
+
   pihole_log_permissions=$(ls -lhd "${PIHOLE_LOG}")
   log_write "${COL_GREEN}${pihole_log_permissions}${COL_NC}"
-  mapfile -t pihole_log_head < <(head -n 20 ${PIHOLE_LOG})
-  log_write "   ${COL_CYAN}-----head of $(basename ${PIHOLE_LOG})------${COL_NC}"
-  obfuscated_pihole_log "${pihole_log_head[@]}"
-  log_write ""
-  mapfile -t pihole_log_tail < <(tail -n 20 ${PIHOLE_LOG})
-  log_write "   ${COL_CYAN}-----tail of $(basename ${PIHOLE_LOG})------${COL_NC}"
-  obfuscated_pihole_log "${pihole_log_tail[@]}"
-  log_write ""
-  # Set the IFS back to what it was
-  IFS="$OLD_IFS"
+  head_tail_log "${PIHOLE_LOG}" 20
 }
 
 curl_to_tricorder() {
@@ -1375,7 +1447,7 @@ curl_to_tricorder() {
 upload_to_tricorder() {
     local username="pihole"
     # Set the permissions and owner
-    chmod 644 ${PIHOLE_DEBUG_LOG}
+    chmod 640 ${PIHOLE_DEBUG_LOG}
     chown "$USER":"${username}" ${PIHOLE_DEBUG_LOG}
 
     # Let the user know debugging is complete with something strikingly visual
@@ -1431,7 +1503,7 @@ upload_to_tricorder() {
         if [[ "${WEBCALL}" ]] && [[ ! "${AUTOMATED}" ]]; then
             :
         else
-            log_write "${CROSS}  ${COL_RED}There was an error uploading your debug log.${COL_NC}"
+            log_write "${CROSS} ${COL_RED}There was an error uploading your debug log.${COL_NC}"
             log_write "   * Please try again or contact the Pi-hole team for assistance."
         fi
     fi
@@ -1452,13 +1524,16 @@ check_selinux
 check_firewalld
 processor_check
 disk_usage
+check_ip_command
 check_networking
 check_name_resolution
 check_dhcp_servers
 process_status
 ftl_full_status
+lighttpd_test_configuration
 parse_setup_vars
 check_x_headers
+analyze_ftl_db
 analyze_gravity_list
 show_groups
 show_domainlist
